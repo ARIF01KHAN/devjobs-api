@@ -1,13 +1,11 @@
 package com.arifkhan.devjobs.DevJobs.dto;
 
 import com.arifkhan.devjobs.DevJobs.entity.Role;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class AuthResponse {
