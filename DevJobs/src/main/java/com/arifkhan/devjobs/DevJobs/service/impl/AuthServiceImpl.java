@@ -61,7 +61,23 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public ResponseEntity<AuthResponse> logIn(LoginRequest loginRequest) {
-        return null;
+    public ResponseEntity<AuthResponse> logIn(LoginRequest loginRequest) throws Exception {
+        String email = loginRequest.getEmail();
+        String password = loginRequest.getPassword();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow( () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User Doen't Exist"));
+
+        AuthResponse authResponse = null;
+        if(passwordEncoder.encode(password).equals(user.getPassword())){
+            String token = jwtUtil.generateToken(email);
+            authResponse = AuthResponse.builder()
+                    .accessToken(token)
+                    .role(user.getRole()).build();
+        } else{
+            throw new Exception("Invalid Credentials");
+        }
+
+        return new ResponseEntity<>(authResponse,HttpStatus.ACCEPTED);
     }
 }
