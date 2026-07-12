@@ -3,8 +3,10 @@ package com.arifkhan.devjobs.DevJobs.service.impl;
 import com.arifkhan.devjobs.DevJobs.dto.AuthResponse;
 import com.arifkhan.devjobs.DevJobs.dto.LoginRequest;
 import com.arifkhan.devjobs.DevJobs.dto.RegisterRequest;
+import com.arifkhan.devjobs.DevJobs.entity.RefreshToken;
 import com.arifkhan.devjobs.DevJobs.entity.Role;
 import com.arifkhan.devjobs.DevJobs.entity.User;
+import com.arifkhan.devjobs.DevJobs.repository.RefreshTokenRepository;
 import com.arifkhan.devjobs.DevJobs.repository.UserRepository;
 import com.arifkhan.devjobs.DevJobs.security.JwtUtil;
 import com.arifkhan.devjobs.DevJobs.service.AuthService;
@@ -15,8 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.sql.Timestamp;
-import java.util.Date;
+import java.util.UUID;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -29,6 +30,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     UserRepository userRepository;
+
+    @Autowired
+    RefreshTokenRepository refreshTokenRepository;
 
     @Override
     public ResponseEntity<AuthResponse> registerUser(RegisterRequest registerRequest) {
@@ -50,34 +54,46 @@ public class AuthServiceImpl implements AuthService {
        user.setEmail(email);
        user.setPassword(passwordEncoder.encode(password));
        user.setRole(role);
-       user.setCreatedAt(new Timestamp(new Date().getTime()));
        userRepository.save(user);
+
+       String refreshToken = createRefreshToken(user);
 
        AuthResponse authResponse = AuthResponse.builder()
                .accessToken(jwtUtil.generateToken(email))
+               .refreshToken(refreshToken)
                .role(role)
                .build();
        return new ResponseEntity<>(authResponse, HttpStatus.CREATED);
     }
 
     @Override
-    public ResponseEntity<AuthResponse> logIn(LoginRequest loginRequest) throws Exception {
+    public ResponseEntity<AuthResponse> logIn(LoginRequest loginRequest) {
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow( () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User Doen't Exist"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
 
-        AuthResponse authResponse = null;
-        if(passwordEncoder.encode(password).equals(user.getPassword())){
-            String token = jwtUtil.generateToken(email);
-            authResponse = AuthResponse.builder()
-                    .accessToken(token)
-                    .role(user.getRole()).build();
-        } else{
-            throw new Exception("Invalid Credentials");
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
 
-        return new ResponseEntity<>(authResponse,HttpStatus.ACCEPTED);
+        String refreshToken = createRefreshToken(user);
+
+        AuthResponse authResponse = AuthResponse.builder()
+                .accessToken(jwtUtil.generateToken(email))
+                .refreshToken(refreshToken)
+                .role(user.getRole())
+                .build();
+        return new ResponseEntity<>(authResponse, HttpStatus.OK);
+    }
+
+    private String createRefreshToken(User user) {
+        String token = UUID.randomUUID().toString();
+        RefreshToken refreshToken = new RefreshToken();
+        refreshToken.setUser(user);
+        refreshToken.setToken(token);
+        refreshTokenRepository.save(refreshToken);
+        return token;
     }
 }

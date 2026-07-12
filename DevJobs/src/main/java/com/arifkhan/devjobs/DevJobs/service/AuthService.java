@@ -9,5 +9,5 @@ public interface AuthService {
 
     public ResponseEntity<AuthResponse> registerUser(RegisterRequest registerRequest);
 
-    public ResponseEntity<AuthResponse> logIn(LoginRequest loginRequest) throws Exception;
+    public ResponseEntity<AuthResponse> logIn(LoginRequest loginRequest);
 }

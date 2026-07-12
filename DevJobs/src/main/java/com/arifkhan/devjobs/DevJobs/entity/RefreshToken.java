@@ -3,6 +3,7 @@ package com.arifkhan.devjobs.DevJobs.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.sql.Timestamp;
 
@@ -21,6 +22,7 @@ public class RefreshToken {
 
     private String token;
 
-    @Column(name = "created_at")
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
     private Timestamp createdAt;
 }
