@@ -16,6 +16,7 @@ public class DevJobsApplication {
 		setPropertyIfPresent(dotenv, "DB_USERNAME");
 		setPropertyIfPresent(dotenv, "DB_URL");
 		setPropertyIfPresent(dotenv, "DB_PASSWORD");
+		setPropertyIfPresent(dotenv, "SECRET_KEY");
 
 		SpringApplication.run(DevJobsApplication.class, args);
 	}
